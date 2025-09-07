@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>MultiEmulador JS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>🎮 Multi-Emulador NES / SNES / GBA</h1>
+
+  <div class="controls">
+    <label>Consola:</label>
+    <select id="consoleSelect">
+      <option value="nes">NES</option>
+      <option value="snes">SNES</option>
+      <option value="gba">GBA</option>
+    </select>
+
+    <input type="file" id="romInput" accept=".nes,.smc,.sfc,.gba">
+  </div>
+
+  <canvas id="screen" width="256" height="240"></canvas>
+
+  <!-- Librerías -->
+  <script src="libs/jsnes.min.js"></script>
+  <script src="libs/snes9x.js"></script>
+  <script src="libs/gba.js"></script>
+
+  <!-- Emuladores -->
+  <script src="emulators/nes.js"></script>
+  <script src="emulators/snes.js"></script>
+  <script src="emulators/gba.js"></script>
+
+  <!-- Lógica principal -->
+  <script src="main.js"></script>
+</body>
+</html>

@@ -41,23 +41,26 @@ class NesEmulator {
       onAudioSample: this.onAudioSample.bind(this), // importante
     });
 
+    // 🎮 Mapeo de teclas (con e.key en vez de keyCode)
     this.keyMap = {
-      38: jsnes.Controller.BUTTON_UP,
-      40: jsnes.Controller.BUTTON_DOWN,
-      37: jsnes.Controller.BUTTON_LEFT,
-      39: jsnes.Controller.BUTTON_RIGHT,
-      90: jsnes.Controller.BUTTON_A, // Z
-      88: jsnes.Controller.BUTTON_B, // X
-      13: jsnes.Controller.BUTTON_START,
-      16: jsnes.Controller.BUTTON_SELECT,
+      ArrowUp: jsnes.Controller.BUTTON_UP,
+      ArrowDown: jsnes.Controller.BUTTON_DOWN,
+      ArrowLeft: jsnes.Controller.BUTTON_LEFT,
+      ArrowRight: jsnes.Controller.BUTTON_RIGHT,
+      x: jsnes.Controller.BUTTON_A,     // X = Saltar
+      z: jsnes.Controller.BUTTON_B,     // Z = Correr / disparar
+      Enter: jsnes.Controller.BUTTON_START,
+      Shift: jsnes.Controller.BUTTON_SELECT,
     };
 
     document.addEventListener("keydown", e => {
-      if (this.keyMap[e.keyCode]) this.nes.buttonDown(1, this.keyMap[e.keyCode]);
+      const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      if (this.keyMap[key]) this.nes.buttonDown(1, this.keyMap[key]);
     });
 
     document.addEventListener("keyup", e => {
-      if (this.keyMap[e.keyCode]) this.nes.buttonUp(1, this.keyMap[e.keyCode]);
+      const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      if (this.keyMap[key]) this.nes.buttonUp(1, this.keyMap[key]);
     });
 
     this._running = false; // evita arrancar múltiples loops

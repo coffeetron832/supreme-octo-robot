@@ -6,11 +6,13 @@ const ctx = canvas.getContext("2d");
 let currentConsole = "nes";
 let emulator = null;
 
+// Cambio de consola
 consoleSelect.addEventListener("change", e => {
   currentConsole = e.target.value;
   console.log("Consola seleccionada:", currentConsole);
 });
 
+// Cargar ROM
 romInput.addEventListener("change", e => {
   const file = e.target.files[0];
   if (!file) return;
@@ -39,5 +41,13 @@ romInput.addEventListener("change", e => {
 
   // NES necesita binaryString, otros pueden aceptar ArrayBuffer
   reader.readAsArrayBuffer(file);
+});
 
+// Pantalla completa
+document.getElementById("fullscreenBtn").addEventListener("click", () => {
+  if (canvas.requestFullscreen) {
+    canvas.requestFullscreen();
+  } else if (canvas.webkitRequestFullscreen) {
+    canvas.webkitRequestFullscreen();
+  }
 });

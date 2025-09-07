@@ -33,14 +33,14 @@ class NesEmulator {
   }
 
   onFrame(frameBuffer) {
-    // frameBuffer viene como enteros RGB (24-bit) por pixel
-    const data = this.imageData.data; // Uint8ClampedArray
+    // frameBuffer viene en formato BGR (0xBBGGRR)
+    const data = this.imageData.data;
     let j = 0;
     for (let i = 0; i < frameBuffer.length; i++) {
       const color = frameBuffer[i];
-      data[j++] = (color >> 16) & 0xFF; // R
+      data[j++] = color & 0xFF;         // R
       data[j++] = (color >> 8) & 0xFF;  // G
-      data[j++] = color & 0xFF;         // B
+      data[j++] = (color >> 16) & 0xFF; // B
       data[j++] = 0xFF;                 // A
     }
     this.ctx.putImageData(this.imageData, 0, 0);

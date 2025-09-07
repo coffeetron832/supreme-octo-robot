@@ -21,6 +21,19 @@
 
   <canvas id="screen" width="256" height="240"></canvas>
 
+  <!-- Nueva sección de ayuda -->
+  <div class="controls-info">
+    <h2>🎮 Controles NES</h2>
+    <ul>
+      <li>Flechas → Mover</li>
+      <li>Z → Botón A</li>
+      <li>X → Botón B</li>
+      <li>Enter → Start</li>
+      <li>Shift → Select</li>
+    </ul>
+    <button id="fullscreenBtn">Pantalla completa</button>
+  </div>
+
   <!-- Librerías -->
   <script src="https://unpkg.com/jsnes/dist/jsnes.min.js"></script>
   <script src="libs/snes9x.js"></script>
@@ -33,5 +46,17 @@
 
   <!-- Lógica principal -->
   <script src="main.js"></script>
+
+  <script>
+    // Pantalla completa
+    const canvas = document.getElementById("screen");
+    document.getElementById("fullscreenBtn").addEventListener("click", () => {
+      if (canvas.requestFullscreen) {
+        canvas.requestFullscreen();
+      } else if (canvas.webkitRequestFullscreen) {
+        canvas.webkitRequestFullscreen();
+      }
+    });
+  </script>
 </body>
 </html>

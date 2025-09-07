@@ -43,15 +43,16 @@ class NesEmulator {
 
     // 🎮 Mapeo de teclas (con e.key en vez de keyCode)
     this.keyMap = {
-      ArrowUp: jsnes.Controller.BUTTON_UP,
-      ArrowDown: jsnes.Controller.BUTTON_DOWN,
-      ArrowLeft: jsnes.Controller.BUTTON_LEFT,
-      ArrowRight: jsnes.Controller.BUTTON_RIGHT,
-      x: jsnes.Controller.BUTTON_A,     // X = Saltar
-      z: jsnes.Controller.BUTTON_B,     // Z = Correr / disparar
-      Enter: jsnes.Controller.BUTTON_START,
-      Shift: jsnes.Controller.BUTTON_SELECT,
-    };
+  ArrowUp: jsnes.Controller.BUTTON_UP,
+  ArrowDown: jsnes.Controller.BUTTON_DOWN,
+  ArrowLeft: jsnes.Controller.BUTTON_LEFT,
+  ArrowRight: jsnes.Controller.BUTTON_RIGHT,
+  z: jsnes.Controller.BUTTON_A,   // Z = salto
+  x: jsnes.Controller.BUTTON_B,   // X = correr/disparo
+  Enter: jsnes.Controller.BUTTON_START,
+  Shift: jsnes.Controller.BUTTON_SELECT,
+};
+
 
     document.addEventListener("keydown", e => {
       const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;

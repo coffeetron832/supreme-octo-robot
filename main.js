@@ -38,9 +38,6 @@ romInput.addEventListener("change", e => {
   };
 
   // NES necesita binaryString, otros pueden aceptar ArrayBuffer
-  if (currentConsole === "nes") {
-    reader.readAsBinaryString(file);
-  } else {
-    reader.readAsArrayBuffer(file);
-  }
+  reader.readAsArrayBuffer(file);
+
 });

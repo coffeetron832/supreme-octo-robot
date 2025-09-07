@@ -41,8 +41,19 @@ class NesEmulator {
   }
 
   loadROM(romData) {
-    this.nes.loadROM(romData);
+  // Convierte ArrayBuffer a string binario
+  let binary = "";
+  const bytes = new Uint8Array(romData);
+  const chunkSize = 0x8000; // para evitar bloqueos con archivos grandes
+
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode.apply(null, chunk);
   }
+
+  this.nes.loadROM(binary);
+}
+
 
   run() {
     const frame = () => {

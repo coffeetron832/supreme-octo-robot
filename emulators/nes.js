@@ -2,7 +2,11 @@ class NesEmulator {
   constructor(canvas, ctx) {
     this.canvas = canvas;
     this.ctx = ctx;
-    this.imageData = ctx.getImageData(0, 0, 256, 240);
+
+    // Crear ImageData explícitamente para evitar dependencias del estado del canvas
+    this.imageData = this.ctx.createImageData(256, 240);
+    // Vista de 32 bits para escribir píxeles en formato ARGB32 rápidamente
+    this.buffer32 = new Uint32Array(this.imageData.data.buffer);
 
     this.nes = new jsnes.NES({
       onFrame: this.onFrame.bind(this),
@@ -26,20 +30,21 @@ class NesEmulator {
     document.addEventListener("keyup", e => {
       if (this.keyMap[e.keyCode]) this.nes.buttonUp(1, this.keyMap[e.keyCode]);
     });
+
+    this._running = false; // evita arrancar múltiples loops
   }
 
   onFrame(frameBuffer) {
+    // frameBuffer viene en formato 0xRRGGBB por pixel
     for (let i = 0; i < frameBuffer.length; i++) {
-      this.imageData.data[i*4+0] = (frameBuffer[i] >> 16) & 0xFF;
-      this.imageData.data[i*4+1] = (frameBuffer[i] >> 8) & 0xFF;
-      this.imageData.data[i*4+2] = frameBuffer[i] & 0xFF;
-      this.imageData.data[i*4+3] = 0xFF;
+      // OR con 0xFF000000 para poner el canal alpha a 255 (ARGB)
+      this.buffer32[i] = 0xFF000000 | frameBuffer[i];
     }
     this.ctx.putImageData(this.imageData, 0, 0);
   }
 
   loadROM(romData) {
-    // Convierte ArrayBuffer a string binario
+    // Convierte ArrayBuffer a string binario (chunked para no saturar call stack)
     let binary = "";
     const bytes = new Uint8Array(romData);
     const chunkSize = 0x8000;
@@ -51,12 +56,16 @@ class NesEmulator {
 
     this.nes.loadROM(binary);
 
-    // 🚀 Ahora sí arrancamos el bucle
-    this.run();
+    // Arrancamos el bucle solo una vez después de cargar la ROM
+    if (!this._running) {
+      this._running = true;
+      this.run();
+    }
   }
 
   run() {
     const frame = () => {
+      // llamar frame del emulador (update y render)
       this.nes.frame();
       requestAnimationFrame(frame);
     };

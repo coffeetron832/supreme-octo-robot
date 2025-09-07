@@ -26,8 +26,6 @@ class NesEmulator {
     document.addEventListener("keyup", e => {
       if (this.keyMap[e.keyCode]) this.nes.buttonUp(1, this.keyMap[e.keyCode]);
     });
-
-    this.run();
   }
 
   onFrame(frameBuffer) {
@@ -41,19 +39,21 @@ class NesEmulator {
   }
 
   loadROM(romData) {
-  // Convierte ArrayBuffer a string binario
-  let binary = "";
-  const bytes = new Uint8Array(romData);
-  const chunkSize = 0x8000; // para evitar bloqueos con archivos grandes
+    // Convierte ArrayBuffer a string binario
+    let binary = "";
+    const bytes = new Uint8Array(romData);
+    const chunkSize = 0x8000;
 
-  for (let i = 0; i < bytes.length; i += chunkSize) {
-    const chunk = bytes.subarray(i, i + chunkSize);
-    binary += String.fromCharCode.apply(null, chunk);
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.subarray(i, i + chunkSize);
+      binary += String.fromCharCode.apply(null, chunk);
+    }
+
+    this.nes.loadROM(binary);
+
+    // 🚀 Ahora sí arrancamos el bucle
+    this.run();
   }
-
-  this.nes.loadROM(binary);
-}
-
 
   run() {
     const frame = () => {

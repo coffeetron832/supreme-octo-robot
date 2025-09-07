@@ -46,17 +46,5 @@
 
   <!-- Lógica principal -->
   <script src="main.js"></script>
-
-  <script>
-    // Pantalla completa
-    const canvas = document.getElementById("screen");
-    document.getElementById("fullscreenBtn").addEventListener("click", () => {
-      if (canvas.requestFullscreen) {
-        canvas.requestFullscreen();
-      } else if (canvas.webkitRequestFullscreen) {
-        canvas.webkitRequestFullscreen();
-      }
-    });
-  </script>
 </body>
 </html>

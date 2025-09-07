@@ -6,8 +6,14 @@ class NesEmulator {
     // Crear ImageData explícitamente para evitar dependencias del estado del canvas
     this.imageData = this.ctx.createImageData(256, 240);
 
+    // 🎵 Configuración de Audio
+    this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    this.audioBufferL = [];
+    this.audioBufferR = [];
+
     this.nes = new jsnes.NES({
       onFrame: this.onFrame.bind(this),
+      onAudioSample: this.onAudioSample.bind(this), // <-- importante
     });
 
     this.keyMap = {
@@ -46,6 +52,35 @@ class NesEmulator {
     this.ctx.putImageData(this.imageData, 0, 0);
   }
 
+  // 🎵 Captura de muestras de audio
+  onAudioSample(left, right) {
+    this.audioBufferL.push(left);
+    this.audioBufferR.push(right);
+  }
+
+  // 🎵 Enviar audio acumulado al altavoz
+  flushAudio() {
+    if (this.audioBufferL.length === 0) return;
+
+    const bufferSize = this.audioBufferL.length;
+    const buffer = this.audioCtx.createBuffer(2, bufferSize, 44100);
+    const channelL = buffer.getChannelData(0);
+    const channelR = buffer.getChannelData(1);
+
+    for (let i = 0; i < bufferSize; i++) {
+      channelL[i] = this.audioBufferL[i];
+      channelR[i] = this.audioBufferR[i];
+    }
+
+    const source = this.audioCtx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(this.audioCtx.destination);
+    source.start();
+
+    this.audioBufferL = [];
+    this.audioBufferR = [];
+  }
+
   loadROM(romData) {
     // Convierte ArrayBuffer a string binario (chunked para no saturar call stack)
     let binary = "";
@@ -68,8 +103,8 @@ class NesEmulator {
 
   run() {
     const frame = () => {
-      // llamar frame del emulador (update y render)
       this.nes.frame();
+      this.flushAudio(); // 🎵 Enviar audio por frame
       requestAnimationFrame(frame);
     };
     frame();

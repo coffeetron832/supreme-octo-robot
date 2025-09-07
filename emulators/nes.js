@@ -5,8 +5,6 @@ class NesEmulator {
 
     // Crear ImageData explícitamente para evitar dependencias del estado del canvas
     this.imageData = this.ctx.createImageData(256, 240);
-    // Vista de 32 bits para escribir píxeles en formato ARGB32 rápidamente
-    this.buffer32 = new Uint32Array(this.imageData.data.buffer);
 
     this.nes = new jsnes.NES({
       onFrame: this.onFrame.bind(this),
@@ -35,10 +33,15 @@ class NesEmulator {
   }
 
   onFrame(frameBuffer) {
-    // frameBuffer viene en formato 0xRRGGBB por pixel
+    // frameBuffer viene como enteros RGB (24-bit) por pixel
+    const data = this.imageData.data; // Uint8ClampedArray
+    let j = 0;
     for (let i = 0; i < frameBuffer.length; i++) {
-      // OR con 0xFF000000 para poner el canal alpha a 255 (ARGB)
-      this.buffer32[i] = 0xFF000000 | frameBuffer[i];
+      const color = frameBuffer[i];
+      data[j++] = (color >> 16) & 0xFF; // R
+      data[j++] = (color >> 8) & 0xFF;  // G
+      data[j++] = color & 0xFF;         // B
+      data[j++] = 0xFF;                 // A
     }
     this.ctx.putImageData(this.imageData, 0, 0);
   }

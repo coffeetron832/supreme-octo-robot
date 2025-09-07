@@ -41,27 +41,49 @@ class NesEmulator {
       onAudioSample: this.onAudioSample.bind(this), // importante
     });
 
-    // 🎮 Mapeo de teclas (con e.key en vez de keyCode)
+    // 🎮 Mapeo de teclas: usamos nombres normalizados (no keyCode)
+    // Nota: asignamos SPACE y 'z' a BUTTON_A por seguridad, y 'x' a BUTTON_B
     this.keyMap = {
-  ArrowUp: jsnes.Controller.BUTTON_UP,
-  ArrowDown: jsnes.Controller.BUTTON_DOWN,
-  ArrowLeft: jsnes.Controller.BUTTON_LEFT,
-  ArrowRight: jsnes.Controller.BUTTON_RIGHT,
-  z: jsnes.Controller.BUTTON_A,   // Z = salto
-  x: jsnes.Controller.BUTTON_B,   // X = correr/disparo
-  Enter: jsnes.Controller.BUTTON_START,
-  Shift: jsnes.Controller.BUTTON_SELECT,
-};
+      ArrowUp: jsnes.Controller.BUTTON_UP,
+      ArrowDown: jsnes.Controller.BUTTON_DOWN,
+      ArrowLeft: jsnes.Controller.BUTTON_LEFT,
+      ArrowRight: jsnes.Controller.BUTTON_RIGHT,
+      space: jsnes.Controller.BUTTON_A,   // Space = salto
+      z: jsnes.Controller.BUTTON_A,       // z  = salto (alternativa)
+      x: jsnes.Controller.BUTTON_B,       // x  = correr/disparo
+      Enter: jsnes.Controller.BUTTON_START,
+      Shift: jsnes.Controller.BUTTON_SELECT,
+    };
 
+    // Helper para normalizar la tecla (soporta Space por e.code)
+    const normalizeKey = (e) => {
+      if (e.code === "Space") return "space";
+      // e.key puede ser 'ArrowUp' o un caracter como 'z' / 'Z'
+      if (e.key && e.key.length === 1) return e.key.toLowerCase();
+      return e.key; // ArrowUp, Enter, Shift, etc.
+    };
 
+    // Manejo de teclado con logs para depuración
     document.addEventListener("keydown", e => {
-      const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
-      if (this.keyMap[key]) this.nes.buttonDown(1, this.keyMap[key]);
+      const key = normalizeKey(e);
+      const btn = this.keyMap[key];
+      if (btn !== undefined) {
+        // log de depuración
+        console.log("[NES] keydown:", key, "-> buttonDown:", btn);
+        this.nes.buttonDown(1, btn);
+        // prevenir scroll con flechas/space si el canvas está enfocado
+        e.preventDefault && e.preventDefault();
+      }
     });
 
     document.addEventListener("keyup", e => {
-      const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
-      if (this.keyMap[key]) this.nes.buttonUp(1, this.keyMap[key]);
+      const key = normalizeKey(e);
+      const btn = this.keyMap[key];
+      if (btn !== undefined) {
+        console.log("[NES] keyup:", key, "-> buttonUp:", btn);
+        this.nes.buttonUp(1, btn);
+        e.preventDefault && e.preventDefault();
+      }
     });
 
     this._running = false; // evita arrancar múltiples loops

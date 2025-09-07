@@ -6,44 +6,58 @@ class NesEmulator {
     // Crear ImageData explícitamente para evitar dependencias del estado del canvas
     this.imageData = this.ctx.createImageData(256, 240);
 
-    // 🎵 Configuración de Audio
+    // 🎵 Configuración de Audio con ScriptProcessorNode
     this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    this.audioBufferL = [];
-    this.audioBufferR = [];
+    this.bufferSize = 2048; // tamaño de bloque (ajustable)
+    this.audioBufferL = new Float32Array(this.bufferSize);
+    this.audioBufferR = new Float32Array(this.bufferSize);
+    this.bufferPos = 0;
+
+    this.scriptNode = this.audioCtx.createScriptProcessor(this.bufferSize, 0, 2);
+    this.scriptNode.onaudioprocess = (e) => {
+      const outL = e.outputBuffer.getChannelData(0);
+      const outR = e.outputBuffer.getChannelData(1);
+
+      // Si no tenemos suficientes muestras, rellenar con silencio
+      if (this.bufferPos === 0) {
+        for (let i = 0; i < outL.length; i++) {
+          outL[i] = 0;
+          outR[i] = 0;
+        }
+        return;
+      }
+
+      for (let i = 0; i < outL.length; i++) {
+        outL[i] = this.audioBufferL[i] || 0;
+        outR[i] = this.audioBufferR[i] || 0;
+      }
+
+      this.bufferPos = 0; // reiniciar para siguiente bloque
+    };
+    this.scriptNode.connect(this.audioCtx.destination);
 
     this.nes = new jsnes.NES({
       onFrame: this.onFrame.bind(this),
-      onAudioSample: this.onAudioSample.bind(this), // <-- importante
+      onAudioSample: this.onAudioSample.bind(this), // importante
     });
 
-    // 🎮 Mapeo de teclas por nombre (más seguro que keyCode)
     this.keyMap = {
-      ArrowUp: jsnes.Controller.BUTTON_UP,
-      ArrowDown: jsnes.Controller.BUTTON_DOWN,
-      ArrowLeft: jsnes.Controller.BUTTON_LEFT,
-      ArrowRight: jsnes.Controller.BUTTON_RIGHT,
-      z: jsnes.Controller.BUTTON_A,     // Z
-      x: jsnes.Controller.BUTTON_B,     // X
-      Enter: jsnes.Controller.BUTTON_START,
-      Shift: jsnes.Controller.BUTTON_SELECT,
+      38: jsnes.Controller.BUTTON_UP,
+      40: jsnes.Controller.BUTTON_DOWN,
+      37: jsnes.Controller.BUTTON_LEFT,
+      39: jsnes.Controller.BUTTON_RIGHT,
+      90: jsnes.Controller.BUTTON_A, // Z
+      88: jsnes.Controller.BUTTON_B, // X
+      13: jsnes.Controller.BUTTON_START,
+      16: jsnes.Controller.BUTTON_SELECT,
     };
 
-    // KeyDown
     document.addEventListener("keydown", e => {
-      const key = e.key.length === 1 ? e.key.toLowerCase() : e.key; // Normaliza
-      if (this.keyMap[key]) {
-        this.nes.buttonDown(1, this.keyMap[key]);
-        e.preventDefault(); // evita scroll con flechas
-      }
+      if (this.keyMap[e.keyCode]) this.nes.buttonDown(1, this.keyMap[e.keyCode]);
     });
 
-    // KeyUp
     document.addEventListener("keyup", e => {
-      const key = e.key.length === 1 ? e.key.toLowerCase() : e.key; // Normaliza
-      if (this.keyMap[key]) {
-        this.nes.buttonUp(1, this.keyMap[key]);
-        e.preventDefault();
-      }
+      if (this.keyMap[e.keyCode]) this.nes.buttonUp(1, this.keyMap[e.keyCode]);
     });
 
     this._running = false; // evita arrancar múltiples loops
@@ -63,33 +77,13 @@ class NesEmulator {
     this.ctx.putImageData(this.imageData, 0, 0);
   }
 
-  // 🎵 Captura de muestras de audio
+  // 🎵 Captura de muestras de audio en un buffer circular
   onAudioSample(left, right) {
-    this.audioBufferL.push(left);
-    this.audioBufferR.push(right);
-  }
-
-  // 🎵 Enviar audio acumulado al altavoz
-  flushAudio() {
-    if (this.audioBufferL.length === 0) return;
-
-    const bufferSize = this.audioBufferL.length;
-    const buffer = this.audioCtx.createBuffer(2, bufferSize, 44100);
-    const channelL = buffer.getChannelData(0);
-    const channelR = buffer.getChannelData(1);
-
-    for (let i = 0; i < bufferSize; i++) {
-      channelL[i] = this.audioBufferL[i];
-      channelR[i] = this.audioBufferR[i];
+    if (this.bufferPos < this.bufferSize) {
+      this.audioBufferL[this.bufferPos] = left;
+      this.audioBufferR[this.bufferPos] = right;
+      this.bufferPos++;
     }
-
-    const source = this.audioCtx.createBufferSource();
-    source.buffer = buffer;
-    source.connect(this.audioCtx.destination);
-    source.start();
-
-    this.audioBufferL = [];
-    this.audioBufferR = [];
   }
 
   loadROM(romData) {
@@ -115,7 +109,6 @@ class NesEmulator {
   run() {
     const frame = () => {
       this.nes.frame();
-      this.flushAudio(); // 🎵 Enviar audio por frame
       requestAnimationFrame(frame);
     };
     frame();

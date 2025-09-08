@@ -26,14 +26,19 @@
     <h2>🎮 Controles NES</h2>
     <ul>
       <li>Flechas → Mover</li>
-      <li>Z → Botón A</li>
-      <li>X → Botón B</li>
+      <li>Z / Space → Botón A (saltar)</li>
+      <li>X → Botón B (correr/disparo)</li>
       <li>Enter → Start</li>
       <li>Shift → Select</li>
     </ul>
+
     <button id="fullscreenBtn">Pantalla completa</button>
-    <button id="saveBtn">💾 Guardar partida</button>
-    <button id="loadBtn">📂 Cargar partida</button>
+    <br><br>
+
+    <!-- Botones para guardar/cargar partida -->
+    <button id="saveStateBtn">💾 Guardar Partida</button>
+    <input type="file" id="loadStateInput" accept=".sav" style="display:none">
+    <button id="loadStateBtn">📂 Cargar Partida</button>
   </div>
 
   <!-- Librerías -->

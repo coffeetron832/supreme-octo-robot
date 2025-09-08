@@ -30,18 +30,25 @@ canvas {
   max-width: 400px;
   background: #f8f8f8;
   border-radius: 8px;
+  color: #222; /* 👈 texto oscuro */
+  font-family: Arial, sans-serif;
+  line-height: 1.5;
 }
 
 .controls-info h2 {
   margin-top: 0;
-  font-size: 18px;
+  font-size: 20px;
+  color: #111; /* 👈 más contraste */
 }
 
 .controls-info ul {
   list-style: none;
   padding-left: 0;
+  margin: 10px 0;
 }
 
 .controls-info li {
-  margin: 5px 0;
+  margin: 6px 0;
+  font-size: 15px;
 }
+

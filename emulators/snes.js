@@ -2,127 +2,127 @@ class SnesEmulator {
   constructor(canvas, ctx) {
     this.canvas = canvas;
     this.ctx = ctx;
-
     this.width = 256;
     this.height = 224;
     this.imageData = this.ctx.createImageData(this.width, this.height);
 
     this._running = false;
+    this.snes = null;
+
+    // 🎮 Mapeo de teclas (ajustado a snes9x-js)
     this.keyMap = {
-      ArrowUp: "up",
-      ArrowDown: "down",
-      ArrowLeft: "left",
-      ArrowRight: "right",
-      z: "a",
-      x: "b",
-      a: "x",
-      s: "y",
-      q: "l",
-      w: "r",
-      Enter: "start",
-      Shift: "select",
+      ArrowUp: 12,    // Up
+      ArrowDown: 13,  // Down
+      ArrowLeft: 14,  // Left
+      ArrowRight: 15, // Right
+      z: 0,           // B
+      x: 1,           // A
+      a: 2,           // Y
+      s: 3,           // X
+      q: 4,           // L
+      w: 5,           // R
+      Enter: 7,       // Start
+      Shift: 6        // Select
     };
 
-    // Aquí todavía no tenemos el core listo hasta que se cargue el módulo
-    this.moduleReady = Snes9xModule().then((Module) => {
-      this.Module = Module;
+    this.init();
+  }
 
-      // Funciones expuestas por el core
-      this._loadROM = Module.cwrap("loadROM", "number", ["array", "number"]);
-      this._frame   = Module.cwrap("frame", null, []);
-      this._buttonDown = Module.cwrap("buttonDown", null, ["number", "string"]);
-      this._buttonUp   = Module.cwrap("buttonUp", null, ["number", "string"]);
-      this._saveState  = Module.cwrap("saveState", "string", []);
-      this._loadState  = Module.cwrap("loadState", null, ["string"]);
+  async init() {
+    this.snes = await Snes9xModule();
 
-      console.log("✅ SNES core listo.");
-    });
+    // Wrap de funciones nativas expuestas por el core
+    this._loadROM = this.snes.cwrap("loadROM", "number", ["array", "number"]);
+    this._emulateFrame = this.snes.cwrap("emulateFrame", null, []);
+    this._getFrameBuffer = this.snes.cwrap("getFrameBuffer", "number", []);
+    this._buttonDown = this.snes.cwrap("buttonDown", null, ["number", "number"]);
+    this._buttonUp = this.snes.cwrap("buttonUp", null, ["number", "number"]);
+    this._saveState = this.snes.cwrap("saveState", "string", []);
+    this._loadState = this.snes.cwrap("loadState", null, ["string"]);
 
     // Eventos de teclado
-    const normalizeKey = (e) => (e.key && e.key.length === 1 ? e.key.toLowerCase() : e.key);
+    const normalizeKey = (e) => (e.key.length === 1 ? e.key.toLowerCase() : e.key);
 
     document.addEventListener("keydown", (e) => {
       const key = normalizeKey(e);
-      const btn = this.keyMap[key];
-      if (btn && this._buttonDown) {
-        this._buttonDown(1, btn);
+      if (this.keyMap[key] !== undefined) {
+        this._buttonDown(1, this.keyMap[key]);
         e.preventDefault();
       }
     });
 
     document.addEventListener("keyup", (e) => {
       const key = normalizeKey(e);
-      const btn = this.keyMap[key];
-      if (btn && this._buttonUp) {
-        this._buttonUp(1, btn);
+      if (this.keyMap[key] !== undefined) {
+        this._buttonUp(1, this.keyMap[key]);
         e.preventDefault();
       }
     });
   }
 
-  // 📺 Dibujar frame (aquí depende de cómo el core expone el framebuffer)
-  onFrame(buffer, width, height) {
-    if (width !== this.width || height !== this.height) {
-      this.width = width;
-      this.height = height;
-      this.imageData = this.ctx.createImageData(this.width, this.height);
-      this.canvas.width = this.width;
-      this.canvas.height = this.height;
+  // 📥 Cargar ROM
+  loadROM(romData) {
+    if (!this.snes) {
+      console.error("❌ SNES no inicializado aún");
+      return;
     }
 
-    const data = this.imageData.data;
-    let j = 0;
-    for (let i = 0; i < buffer.length; i++) {
-      const color = buffer[i];
-      data[j++] = color & 0xff;
-      data[j++] = (color >> 8) & 0xff;
-      data[j++] = (color >> 16) & 0xff;
-      data[j++] = 0xff;
+    const data = new Uint8Array(romData);
+    const buf = this.snes._malloc(data.length);
+    this.snes.HEAPU8.set(data, buf);
+    this._loadROM(buf, data.length);
+    this.snes._free(buf);
+
+    if (!this._running) {
+      this._running = true;
+      this.run();
     }
-    this.ctx.putImageData(this.imageData, 0, 0);
   }
 
-  async loadROM(romData) {
-    await this.moduleReady;
-    try {
-      const bytes = new Uint8Array(romData);
-      this._loadROM(bytes, bytes.length);
-      console.log("✅ ROM SNES cargado");
+  // 📺 Dibujar frame
+  drawFrame() {
+    this._emulateFrame();
+    const ptr = this._getFrameBuffer();
+    const frameBuffer = new Uint8Array(this.snes.HEAPU8.buffer, ptr, this.width * this.height * 4);
 
-      if (!this._running) {
-        this._running = true;
-        this.run();
-      }
-    } catch (err) {
-      console.error("❌ Error cargando ROM SNES:", err);
-    }
+    this.imageData.data.set(frameBuffer);
+    this.ctx.putImageData(this.imageData, 0, 0);
   }
 
   run() {
     const loop = () => {
-      if (this._frame) this._frame();
-      requestAnimationFrame(loop);
+      if (this._running) {
+        this.drawFrame();
+        requestAnimationFrame(loop);
+      }
     };
     loop();
   }
 
+  // 💾 Guardar estado
   saveState() {
-    if (this._saveState) {
-      const stateStr = this._saveState();
-      const blob = new Blob([stateStr], { type: "application/json" });
+    try {
+      const state = this._saveState();
+      const blob = new Blob([state], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       a.download = "snes_save.sav";
       a.click();
       URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("❌ Error guardando partida SNES:", err);
     }
   }
 
+  // 📂 Cargar estado
   loadState(state) {
-    if (this._loadState) {
-      this._loadState(JSON.stringify(state));
+    try {
+      const stateStr = JSON.stringify(state);
+      this._loadState(stateStr);
       console.log("✅ Partida SNES cargada.");
+    } catch (err) {
+      console.error("❌ Error al cargar partida SNES:", err);
     }
   }
 }

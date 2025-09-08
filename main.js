@@ -39,7 +39,6 @@ romInput.addEventListener("change", e => {
     }
   };
 
-  // NES necesita binaryString, otros pueden aceptar ArrayBuffer
   reader.readAsArrayBuffer(file);
 });
 
@@ -49,5 +48,31 @@ document.getElementById("fullscreenBtn").addEventListener("click", () => {
     canvas.requestFullscreen();
   } else if (canvas.webkitRequestFullscreen) {
     canvas.webkitRequestFullscreen();
+  }
+});
+
+// 🎮 Guardar partida
+document.getElementById("saveStateBtn").addEventListener("click", () => {
+  if (emulator && typeof emulator.saveState === "function") {
+    emulator.saveState();
+  } else {
+    alert("⚠️ Guardar estado solo está disponible en NES por ahora.");
+  }
+});
+
+// 🎮 Cargar partida
+document.getElementById("loadStateInput").addEventListener("change", e => {
+  if (!emulator || typeof emulator.loadState !== "function") {
+    alert("⚠️ Cargar estado solo está disponible en NES por ahora.");
+    return;
+  }
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const state = JSON.parse(ev.target.result);
+      emulator.loadState(state);
+    };
+    reader.readAsText(file);
   }
 });

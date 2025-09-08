@@ -12,6 +12,9 @@ class SnesEmulator {
     this._running = false;
     this.snes = null;
 
+    // ⚡ Promesa de inicialización de Higan
+    this.ready = this.initHigan();
+
     // 🎮 Mapeo teclas SNES
     this.keyMap = {
       ArrowUp: "up",
@@ -36,7 +39,7 @@ class SnesEmulator {
     document.addEventListener("keydown", (e) => {
       const key = normalizeKey(e);
       if (this.snes && this.keyMap[key] && this.snes.press) {
-        this.snes.press(this.keyMap[key]); // 👈 API higan-js
+        this.snes.press(this.keyMap[key]);
         e.preventDefault();
       }
     });
@@ -44,23 +47,32 @@ class SnesEmulator {
     document.addEventListener("keyup", (e) => {
       const key = normalizeKey(e);
       if (this.snes && this.keyMap[key] && this.snes.release) {
-        this.snes.release(this.keyMap[key]); // 👈 API higan-js
+        this.snes.release(this.keyMap[key]);
         e.preventDefault();
       }
     });
   }
 
+  async initHigan() {
+    if (!window.HiganModule) {
+      throw new Error("HiganModule no encontrado en window.");
+    }
+    try {
+      // ⚡ Inicializamos la librería y esperamos la promesa
+      const Module = await window.HiganModule();
+      console.log("✅ HiganModule listo:", Module);
+      return Module;
+    } catch (err) {
+      console.error("❌ Error inicializando HiganModule:", err);
+    }
+  }
+
   async loadROM(romData) {
     try {
-      if (!window.HiganModule) {
-        throw new Error("Higan aún no está inicializado.");
-      }
+      const Module = await this.ready; // 👈 esperar inicialización
 
-      // ⚡ Lo importante: usa la clase correcta exportada por higan.js
-      console.log("🔍 Claves disponibles en HiganModule:", Object.keys(window.HiganModule));
-
-      // ⚠️ Esto puede variar: a veces es Emulator, a veces SNES, depende del build
-      this.snes = new window.HiganModule.Emulator(this.canvas);
+      // ⚠️ Ajustar clase según lo que exporte Module
+      this.snes = new Module.Emulator(this.canvas);
 
       await this.snes.loadROM(romData);
 
@@ -77,7 +89,7 @@ class SnesEmulator {
   run() {
     const loop = () => {
       if (this.snes && this.snes.runFrame) {
-        this.snes.runFrame(); // 👈 API de higan-js
+        this.snes.runFrame();
       }
       requestAnimationFrame(loop);
     };
@@ -87,7 +99,7 @@ class SnesEmulator {
   saveState() {
     try {
       if (!this.snes || !this.snes.saveState) return;
-      const state = this.snes.saveState(); // 👈 API higan-js
+      const state = this.snes.saveState();
       const blob = new Blob([state], { type: "application/octet-stream" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -103,7 +115,7 @@ class SnesEmulator {
   loadState(stateBuffer) {
     try {
       if (this.snes && this.snes.loadState) {
-        this.snes.loadState(stateBuffer); // 👈 API higan-js
+        this.snes.loadState(stateBuffer);
         console.log("✅ Partida SNES cargada.");
       }
     } catch (err) {

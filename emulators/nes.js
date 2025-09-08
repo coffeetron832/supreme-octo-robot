@@ -19,10 +19,8 @@ class NesEmulator {
       const outR = e.outputBuffer.getChannelData(1);
 
       if (this.bufferPos === 0) {
-        for (let i = 0; i < outL.length; i++) {
-          outL[i] = 0;
-          outR[i] = 0;
-        }
+        outL.fill(0);
+        outR.fill(0);
         return;
       }
 
@@ -64,7 +62,7 @@ class NesEmulator {
       const btn = this.keyMap[key];
       if (btn !== undefined) {
         this.nes.buttonDown(1, btn);
-        e.preventDefault && e.preventDefault();
+        e.preventDefault?.();
       }
     });
 
@@ -73,7 +71,7 @@ class NesEmulator {
       const btn = this.keyMap[key];
       if (btn !== undefined) {
         this.nes.buttonUp(1, btn);
-        e.preventDefault && e.preventDefault();
+        e.preventDefault?.();
       }
     });
 
@@ -181,7 +179,18 @@ class NesEmulator {
         alert("⚠️ Primero carga un ROM antes de cargar la partida.");
         return;
       }
+
       this.nes.fromJSON(state);
+
+      // 🔄 Forzar un frame inmediato para actualizar pantalla
+      this.nes.frame();
+
+      // 🔄 Reactivar el bucle si estaba detenido
+      if (!this._running) {
+        this._running = true;
+        this.run();
+      }
+
       alert("✅ Partida cargada correctamente.");
     } catch (err) {
       alert("❌ Error: la partida no coincide con este ROM o está dañada.");

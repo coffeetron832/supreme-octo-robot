@@ -3,10 +3,10 @@ class NesEmulator {
     this.canvas = canvas;
     this.ctx = ctx;
 
-    // Crear ImageData explícitamente para evitar dependencias del estado del canvas
+    // Crear ImageData explícitamente
     this.imageData = this.ctx.createImageData(256, 240);
 
-    // 🎵 Configuración de Audio con ScriptProcessorNode
+    // 🎵 Audio con ScriptProcessorNode
     this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     this.bufferSize = 2048;
     this.audioBufferL = new Float32Array(this.bufferSize);
@@ -95,8 +95,13 @@ class NesEmulator {
         if (file) {
           const reader = new FileReader();
           reader.onload = (ev) => {
-            const state = JSON.parse(ev.target.result);
-            this.loadState(state);
+            try {
+              const state = JSON.parse(ev.target.result);
+              this.loadState(state);
+              alert("✅ Partida cargada correctamente.");
+            } catch (err) {
+              alert("❌ Archivo de partida inválido.");
+            }
           };
           reader.readAsText(file);
         }

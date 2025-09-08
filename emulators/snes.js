@@ -62,22 +62,26 @@ class SnesEmulator {
   }
 
   async loadROM(romData) {
-    try {
-      // `Higan` es el objeto global expuesto por higan-js
-      this.snes = new Higan(this.canvas);
+  try {
+    // Crear instancia del emulador (Higan global de higan-js)
+    this.snes = new Higan(this.canvas);
 
-      // Cargar ROM desde buffer
-      await this.snes.loadROM(romData);
+    // Asegurarnos de que el buffer sea Uint8Array
+    const romBuffer = new Uint8Array(romData);
 
-      if (!this._running) {
-        this._running = true;
-        this.run();
-      }
-    } catch (err) {
-      console.error("❌ Error cargando ROM SNES:", err);
-      alert("No se pudo cargar el ROM de SNES.");
+    // Cargar la ROM
+    await this.snes.loadROM(romBuffer);
+
+    if (!this._running) {
+      this._running = true;
+      this.run();
     }
+  } catch (err) {
+    console.error("❌ Error cargando ROM SNES:", err);
+    alert("No se pudo cargar el ROM de SNES.");
   }
+}
+
 
   run() {
     const loop = () => {

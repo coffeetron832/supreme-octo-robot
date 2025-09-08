@@ -20,10 +20,8 @@ class SnesEmulator {
     };
     this.scriptNode.connect(this.audioCtx.destination);
 
-    // ⚡ Guardamos la promesa de inicialización
-    this.ready = this.init();
-
     this._running = false;
+    this.snes = null;
 
     // 🎮 Mapeo teclas SNES
     this.keyMap = {
@@ -49,7 +47,7 @@ class SnesEmulator {
     document.addEventListener("keydown", (e) => {
       const key = normalizeKey(e);
       if (this.snes && this.keyMap[key]) {
-        this.snes.buttonDown(1, this.keyMap[key]);
+        this.snes.press(this.keyMap[key]);
         e.preventDefault();
       }
     });
@@ -57,58 +55,19 @@ class SnesEmulator {
     document.addEventListener("keyup", (e) => {
       const key = normalizeKey(e);
       if (this.snes && this.keyMap[key]) {
-        this.snes.buttonUp(1, this.keyMap[key]);
+        this.snes.release(this.keyMap[key]);
         e.preventDefault();
       }
     });
   }
 
-  async init() {
-    try {
-      this.snes = await Snes9xModule(); // 👈 inicializar con la promesa
-      console.log("✅ SNES listo");
-    } catch (err) {
-      console.error("❌ Error inicializando SNES:", err);
-    }
-  }
-
-  onFrame(frameBuffer, width, height) {
-    if (!frameBuffer) return;
-
-    if (width && height && (width !== this.width || height !== this.height)) {
-      this.width = width;
-      this.height = height;
-      this.imageData = this.ctx.createImageData(this.width, this.height);
-      this.canvas.width = this.width;
-      this.canvas.height = this.height;
-    }
-
-    const data = this.imageData.data;
-    let j = 0;
-    for (let i = 0; i < frameBuffer.length; i++) {
-      const color = frameBuffer[i];
-      data[j++] = color & 0xff;
-      data[j++] = (color >> 8) & 0xff;
-      data[j++] = (color >> 16) & 0xff;
-      data[j++] = 0xff;
-    }
-    this.ctx.putImageData(this.imageData, 0, 0);
-  }
-
-  onAudioSample(left, right) {
-    // ⚠️ pendiente: cuando snes9x exponga audio real
-  }
-
   async loadROM(romData) {
-    await this.ready; // 👈 esperar que SNES esté inicializado
-
-    if (!this.snes) {
-      console.error("❌ SNES no inicializado aún");
-      return;
-    }
-
     try {
-      this.snes.loadROM(romData);
+      // `Higan` es el objeto global expuesto por higan-js
+      this.snes = new Higan(this.canvas);
+
+      // Cargar ROM desde buffer
+      await this.snes.loadROM(romData);
 
       if (!this._running) {
         this._running = true;
@@ -121,19 +80,19 @@ class SnesEmulator {
   }
 
   run() {
-    const frame = () => {
-      if (this.snes && typeof this.snes.frame === "function") {
-        this.snes.frame();
+    const loop = () => {
+      if (this.snes) {
+        this.snes.runFrame(); // API de higan-js
       }
-      requestAnimationFrame(frame);
+      requestAnimationFrame(loop);
     };
-    frame();
+    loop();
   }
 
   saveState() {
     try {
-      const state = this.snes.toJSON();
-      const blob = new Blob([JSON.stringify(state)], { type: "application/json" });
+      const state = this.snes.saveState();
+      const blob = new Blob([state], { type: "application/octet-stream" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -145,9 +104,9 @@ class SnesEmulator {
     }
   }
 
-  loadState(state) {
+  loadState(stateBuffer) {
     try {
-      this.snes.fromJSON(state);
+      this.snes.loadState(stateBuffer);
       console.log("✅ Partida SNES cargada.");
     } catch (err) {
       console.error("❌ Error al cargar partida SNES:", err);

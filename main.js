@@ -60,7 +60,12 @@ document.getElementById("saveStateBtn").addEventListener("click", () => {
   }
 });
 
-// 🎮 Cargar partida
+// 🎮 Conectar botón "Cargar Partida" con el input oculto
+document.getElementById("loadStateBtn").addEventListener("click", () => {
+  document.getElementById("loadStateInput").click();
+});
+
+// 🎮 Cargar partida desde archivo
 document.getElementById("loadStateInput").addEventListener("change", e => {
   if (!emulator || typeof emulator.loadState !== "function") {
     alert("⚠️ Cargar estado solo está disponible en NES por ahora.");
@@ -70,8 +75,13 @@ document.getElementById("loadStateInput").addEventListener("change", e => {
   if (file) {
     const reader = new FileReader();
     reader.onload = (ev) => {
-      const state = JSON.parse(ev.target.result);
-      emulator.loadState(state);
+      try {
+        const state = JSON.parse(ev.target.result);
+        emulator.loadState(state);
+        alert("✅ Partida cargada correctamente.");
+      } catch (err) {
+        alert("❌ Archivo de partida inválido.");
+      }
     };
     reader.readAsText(file);
   }

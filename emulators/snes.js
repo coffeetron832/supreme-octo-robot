@@ -35,7 +35,7 @@ class SnesEmulator {
 
     document.addEventListener("keydown", (e) => {
       const key = normalizeKey(e);
-      if (this.snes && this.keyMap[key]) {
+      if (this.snes && this.keyMap[key] && this.snes.press) {
         this.snes.press(this.keyMap[key]); // 👈 API higan-js
         e.preventDefault();
       }
@@ -43,7 +43,7 @@ class SnesEmulator {
 
     document.addEventListener("keyup", (e) => {
       const key = normalizeKey(e);
-      if (this.snes && this.keyMap[key]) {
+      if (this.snes && this.keyMap[key] && this.snes.release) {
         this.snes.release(this.keyMap[key]); // 👈 API higan-js
         e.preventDefault();
       }
@@ -52,10 +52,17 @@ class SnesEmulator {
 
   async loadROM(romData) {
     try {
-      // `Higan` es el objeto global que expone higan-js
-      this.snes = new Higan(this.canvas);
+      if (!window.HiganModule) {
+        throw new Error("Higan aún no está inicializado.");
+      }
 
-      await this.snes.loadROM(romData); // 👈 API de higan-js
+      // ⚡ Lo importante: usa la clase correcta exportada por higan.js
+      console.log("🔍 Claves disponibles en HiganModule:", Object.keys(window.HiganModule));
+
+      // ⚠️ Esto puede variar: a veces es Emulator, a veces SNES, depende del build
+      this.snes = new window.HiganModule.Emulator(this.canvas);
+
+      await this.snes.loadROM(romData);
 
       if (!this._running) {
         this._running = true;
@@ -69,7 +76,7 @@ class SnesEmulator {
 
   run() {
     const loop = () => {
-      if (this.snes) {
+      if (this.snes && this.snes.runFrame) {
         this.snes.runFrame(); // 👈 API de higan-js
       }
       requestAnimationFrame(loop);
@@ -79,6 +86,7 @@ class SnesEmulator {
 
   saveState() {
     try {
+      if (!this.snes || !this.snes.saveState) return;
       const state = this.snes.saveState(); // 👈 API higan-js
       const blob = new Blob([state], { type: "application/octet-stream" });
       const url = URL.createObjectURL(blob);
@@ -94,8 +102,10 @@ class SnesEmulator {
 
   loadState(stateBuffer) {
     try {
-      this.snes.loadState(stateBuffer); // 👈 API higan-js
-      console.log("✅ Partida SNES cargada.");
+      if (this.snes && this.snes.loadState) {
+        this.snes.loadState(stateBuffer); // 👈 API higan-js
+        console.log("✅ Partida SNES cargada.");
+      }
     } catch (err) {
       console.error("❌ Error al cargar partida SNES:", err);
     }

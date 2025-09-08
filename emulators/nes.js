@@ -6,7 +6,7 @@ class NesEmulator {
     // Crear ImageData explícitamente
     this.imageData = this.ctx.createImageData(256, 240);
 
-    // 🎵 Audio con ScriptProcessorNode
+    // 🎵 Configuración de Audio
     this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     this.bufferSize = 2048;
     this.audioBufferL = new Float32Array(this.bufferSize);
@@ -79,7 +79,7 @@ class NesEmulator {
 
     this._running = false;
 
-    // 📌 Conectar botones de Guardar / Cargar
+    // 📌 Botones de Guardar / Cargar
     const saveBtn = document.getElementById("saveStateBtn");
     const loadBtn = document.getElementById("loadStateBtn");
     const loadInput = document.getElementById("loadStateInput");
@@ -98,9 +98,9 @@ class NesEmulator {
             try {
               const state = JSON.parse(ev.target.result);
               this.loadState(state);
-              alert("✅ Partida cargada correctamente.");
             } catch (err) {
               alert("❌ Archivo de partida inválido.");
+              console.error(err);
             }
           };
           reader.readAsText(file);
@@ -158,22 +158,33 @@ class NesEmulator {
 
   // 📌 Guardar partida a archivo
   saveState() {
-    const state = this.nes.toJSON();
-    const blob = new Blob([JSON.stringify(state)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "nes_save.sav";
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const state = this.nes.toJSON();
+      const blob = new Blob([JSON.stringify(state)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "nes_save.sav";
+      a.click();
+      URL.revokeObjectURL(url);
+      alert("💾 Partida guardada con éxito.");
+    } catch (err) {
+      alert("❌ Error al guardar partida.");
+      console.error(err);
+    }
   }
 
   // 📌 Cargar partida desde objeto
   loadState(state) {
     try {
+      if (!this.nes.rom) {
+        alert("⚠️ Primero carga un ROM antes de cargar la partida.");
+        return;
+      }
       this.nes.fromJSON(state);
-      console.log("✅ Partida cargada correctamente");
+      alert("✅ Partida cargada correctamente.");
     } catch (err) {
+      alert("❌ Error: la partida no coincide con este ROM o está dañada.");
       console.error("❌ Error al cargar partida:", err);
     }
   }

@@ -18,7 +18,7 @@ romInput.addEventListener("change", e => {
   if (!file) return;
   const reader = new FileReader();
 
-  reader.onload = () => {
+  reader.onload = async () => { // 👈 ahora async
     const romData = reader.result;
 
     switch (currentConsole) {
@@ -29,6 +29,8 @@ romInput.addEventListener("change", e => {
 
       case "snes":
         emulator = new SnesEmulator(canvas, ctx);
+        // Esperar que termine la inicialización
+        await emulator.ready;
         emulator.loadROM(romData);
         break;
 
@@ -56,7 +58,7 @@ document.getElementById("saveStateBtn").addEventListener("click", () => {
   if (emulator && typeof emulator.saveState === "function") {
     emulator.saveState();
   } else {
-    alert("⚠️ Guardar estado solo está disponible en NES por ahora.");
+    alert("⚠️ Guardar estado solo está disponible en NES y SNES por ahora.");
   }
 });
 
@@ -68,7 +70,7 @@ document.getElementById("loadStateBtn").addEventListener("click", () => {
 // 🎮 Cargar partida desde archivo
 document.getElementById("loadStateInput").addEventListener("change", e => {
   if (!emulator || typeof emulator.loadState !== "function") {
-    alert("⚠️ Cargar estado solo está disponible en NES por ahora.");
+    alert("⚠️ Cargar estado solo está disponible en NES y SNES por ahora.");
     return;
   }
   const file = e.target.files[0];
@@ -81,6 +83,7 @@ document.getElementById("loadStateInput").addEventListener("change", e => {
         alert("✅ Partida cargada correctamente.");
       } catch (err) {
         alert("❌ Archivo de partida inválido.");
+        console.error(err);
       }
     };
     reader.readAsText(file);

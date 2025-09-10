@@ -42,16 +42,20 @@
   </div>
 
   <!-- Librerías -->
+  <!-- NES -->
   <script src="https://unpkg.com/jsnes/dist/jsnes.min.js"></script>
-  <script src="https://rawcdn.githack.com/byuu/bsnes-web/master/higan.js"></script>
-<script>
-  // Inicializar higan/bsnes
-  Higan().then(Module => {
-    window.HiganModule = Module;
-    console.log("✅ Higan listo:", Module);
-  });
-</script>
 
+  <!-- SNES (higan/bsnes desde CDN alternativo) -->
+  <script src="https://rawcdn.githack.com/andrewrk/bsnes-web/gh-pages/higan.js"></script>
+  <script>
+    // Inicializar higan/bsnes y exponerlo
+    Higan().then(Module => {
+      window.HiganModule = () => Promise.resolve(Module); 
+      console.log("✅ Higan listo:", Module);
+    });
+  </script>
+
+  <!-- GBA -->
   <script src="libs/gba.js"></script>
 
   <!-- Emuladores -->

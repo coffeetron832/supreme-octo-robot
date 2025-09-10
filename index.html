@@ -46,23 +46,7 @@
   <script src="https://unpkg.com/jsnes/dist/jsnes.min.js"></script>
 
   <!-- SNES (higan/bsnes desde CDN alternativo) -->
-  <script src="https://cdn.jsdelivr.net/gh/andrewrk/bsnes-web@gh-pages/higan.js"></script>
-<script>
-  if (typeof Higan !== "undefined") {
-    Higan().then(Module => {
-      window.HiganModule = Module;
-      console.log("✅ Higan listo:", Module);
-    });
-  } else if (typeof Module !== "undefined") {
-    Module().then(mod => {
-      window.HiganModule = mod;
-      console.log("✅ Higan listo con Module:", mod);
-    });
-  } else {
-    console.error("❌ No se encontró Higan ni Module en el global.");
-  }
-</script>
-
+  <script src="libs/snes9x.js"></script>
 
   <!-- GBA -->
   <script src="libs/gba.js"></script>

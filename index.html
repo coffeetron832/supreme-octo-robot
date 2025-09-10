@@ -47,13 +47,22 @@
 
   <!-- SNES (higan/bsnes desde CDN alternativo) -->
   <script src="https://cdn.jsdelivr.net/gh/andrewrk/bsnes-web@gh-pages/higan.js"></script>
-  <script>
-    // Inicializar higan/bsnes y exponerlo
+<script>
+  if (typeof Higan !== "undefined") {
     Higan().then(Module => {
-      window.HiganModule = () => Promise.resolve(Module); 
+      window.HiganModule = Module;
       console.log("✅ Higan listo:", Module);
     });
-  </script>
+  } else if (typeof Module !== "undefined") {
+    Module().then(mod => {
+      window.HiganModule = mod;
+      console.log("✅ Higan listo con Module:", mod);
+    });
+  } else {
+    console.error("❌ No se encontró Higan ni Module en el global.");
+  }
+</script>
+
 
   <!-- GBA -->
   <script src="libs/gba.js"></script>
